@@ -20,8 +20,10 @@ float Robo::GetX() {
 float Robo::GetY() {
   return y;
 }
-
-float Robo::GetTheta() {
+float Robo::GetTheta(){
+  return theta;
+}
+float Robo::GetAtualTheta() {
   return Compass.GetHeadingDegrees();
 }
 

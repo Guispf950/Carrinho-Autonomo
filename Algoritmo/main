@@ -123,7 +123,7 @@ void motorControl(int in1, int in2, int state1, int state2) {
 void andarFrente(int cm) {
   movimentoReto = false;
   int pulsos = cm / 1.1;
-  float anguloAntes = robo->GetTheta();
+  float anguloAntes = robo->GetAtualTheta();
   Serial.println(anguloAntes);
 
   while (!movimentoReto) {
@@ -145,13 +145,10 @@ void andarFrente(int cm) {
       movimentoReto = true;
       pulseCountA = 0;
       pulseCountB = 0;
-      float anguloDepois = robo->GetTheta();
+      float anguloDepois = robo->GetAtualTheta();
       Serial.println(anguloDepois);
 
       atualizarPosicao();
-      float xAtual = robo->GetX();
-      float yAtual = robo->GetY();
-      float thetaAtual = robo->GetTheta();
 
       // Expande o array se necessário
       if (caminhoSize >= caminhoCapacity) {
@@ -164,7 +161,7 @@ void andarFrente(int cm) {
         caminho = novoCaminho;
       }
 
-      caminho[caminhoSize++] = Robo(xAtual, yAtual, thetaAtual);
+      caminho[caminhoSize++] = Robo(robo->GetX(), robo->GetY(), robo->GetAtualTheta());
     }
   }
 }
@@ -172,7 +169,7 @@ void andarFrente(int cm) {
 void girarPosicao(int angulo) {
   int comprimentoArco = (angulo/360) * (2 * M_PI * distanciaEntreRodas);
   int pulsos = round(comprimentoArco / 1.1);
-  float anguloAntes = robo->GetTheta();
+  float anguloAntes = robo->GetAtualTheta();
 
   if (!movimentoGirar) {
     if (pulsos > 0) {  
@@ -202,7 +199,7 @@ void girarPosicao(int angulo) {
       motorControl(IN1, IN2, LOW, LOW);
       motorControl(IN3, IN4, LOW, LOW);
       //atualiza o angulo do carro
-      float anguloDepois = robo->GetTheta();
+      float anguloDepois = robo->GetAtualTheta();
       //verifica se o carro girou o angulo certo e se esta dentro da margem de erro
       float anguloRotacionado = anguloDepois - anguloAntes;
       if (abs(anguloRotacionado - angulo) > 5) { // definir a margem de erro (aqui esta 5º)
@@ -225,7 +222,7 @@ void girarPosicao(int angulo) {
           caminho = novoCaminho;
         }
         //adciona um OBJ robo no vetor caminho
-        caminho[caminhoSize++] = Robo(robo->GetX(), robo->GetY(), robo->GetTheta());
+        caminho[caminhoSize++] = Robo(robo->GetX(), robo->GetY(), robo->GetAtualTheta());
       }
     }
   }
@@ -237,7 +234,7 @@ void navigateToPoint(float goalX, float goalY) {
   float distance = sqrt(deltaX * deltaX + deltaY * deltaY);
   float angleToTarget = atan2(deltaY, deltaX) * 180 / M_PI;
 
-  float angleToTurn = angleToTarget - robo->GetTheta();
+  float angleToTurn = angleToTarget - robo->GetAtualTheta();
 
   girarPosicao(angleToTurn);
 
@@ -249,7 +246,7 @@ void navigateToPoint(float goalX, float goalY) {
     float forceY = forces[1];
     float resultantAngle = atan2(forceY, forceX) * 180 / M_PI;
 
-    float angleToTurn = resultantAngle - robo->GetTheta();
+    float angleToTurn = resultantAngle - robo->GetAtualTheta();
     girarPosicao(angleToTurn);
 
     if(distance < stepSize) { // Se a distancia for menor que stepSize, o robo anda a distancia restante
@@ -369,7 +366,9 @@ void atualizarPosicao() {
 
         cordX = coordenadaXs.toFloat(); // coordenada X do robo
         cordY = coordenadaYs.toFloat(); // coordenada Y do robo
+
         thetaAtual = Compass.GetHeadingDegrees(); // direção do robo
+
         goalX = goalXs.toFloat(); // coordenada X do objetivo
         goalY = goalYs.toFloat(); // coordenada Y do objetivo
     

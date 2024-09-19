@@ -14,6 +14,8 @@
 const char* ssid = "CLARO_2G1ED171";
 const char* password = "B71ED171";
 
+String status = "desocupado";  // Inicializa em "desocupado"
+
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 
@@ -145,7 +147,16 @@ void setup() {
     Serial.print("Value 4: ");
     Serial.println(value4);
 
+    // Muda o status para "ocupado"
+    status = "ocupado";
+
     request->send(200, "text/plain", "Values received and sent to Arduino Mega");
+  });
+
+
+   // Adiciona a nova rota /status que retorna "desocupado"
+  server.on("/status", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/plain", status);
   });
 
   // Start server
@@ -153,5 +164,18 @@ void setup() {
 }
 
 void loop() {
-  delay(1); // Do nothing here, all actions are handled in the HTTP request callbacks
+
+  // Verifica se chegou algo pela Serial do Arduino Mega
+  if (mySerial.available()) {
+    String message = mySerial.readStringUntil(';'); //recebe desocupado;
+    message.trim();  //Remove espacos
+    
+    if (message.equalsIgnoreCase("desocupado")) { //A função equalsIgnoreCase() faz essa comparação sem considerar a diferença entre letras maiúsculas e minúsculas
+      status = "desocupado";  // Muda o status para "desocupado"
+      Serial.println("Status changed to: desocupado");
+    }
+  }
+
+  delay(1);
 }
+ 

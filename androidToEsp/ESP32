@@ -110,48 +110,54 @@ void setup() {
   });
 
   server.on("/enviar-coord", HTTP_POST, [](AsyncWebServerRequest *request) {
-    String value1 = "";
-    String value2 = "";
-    String value3 = "";
-    String value4 = "";
-
-    if (request->hasParam("value1", true)) {
-        value1 = request->getParam("value1", true)->value();
+    String xRobo = "";
+    String yRobo = "";
+    String orientacaoRobo = "";
+    
+    // Recupera os parâmetros do pedido
+    if (request->hasParam("RoboX", true)) {
+        xRobo = request->getParam("RoboX", true)->value();
     }
-    if (request->hasParam("value2", true)) {
-        value2 = request->getParam("value2", true)->value();
+    if (request->hasParam("RoboY", true)) {
+        yRobo = request->getParam("RoboY", true)->value();
     }
-    if (request->hasParam("value3", true)) {
-        value3 = request->getParam("value3", true)->value();
-    }
-    if (request->hasParam("value4", true)) {
-        value4 = request->getParam("value4", true)->value();
+    if (request->hasParam("RoboTheta", true)) {
+        orientacaoRobo = request->getParam("RoboTheta", true)->value();
     }
 
-    // Send the values to Arduino Mega via Serial
-    mySerial.print(value1);
-    mySerial.print(";");
-    mySerial.print(value2);
-    mySerial.print(";");
-    mySerial.print(value3);
-    mySerial.print(";");
-    mySerial.println(value4);
+    // Cria um StringBuilder para armazenar todos os dados
+    String outputData = xRobo + ", " + yRobo + ", " + orientacaoRobo;
 
-    // Log the values to the ESP32 Serial Monitor
-    Serial.print("Value 1: ");
-    Serial.println(value1);
-    Serial.print("Value 2: ");
-    Serial.println(value2);
-    Serial.print("Value 3: ");
-    Serial.println(value3);
-    Serial.print("Value 4: ");
-    Serial.println(value4);
+    // Lidar com os obstáculos
+    for (int i = 1; i <= 10; i++) { // Mude o limite conforme necessário
+        String xObstaculoKey = "obstaculo" + String(i) + "X";
+        String yObstaculoKey = "obstaculo" + String(i) + "Y";
+        
+        if (request->hasParam(xObstaculoKey, true) && request->hasParam(yObstaculoKey, true)) {
+            String xObstaculoValue = request->getParam(xObstaculoKey, true)->value();
+            String yObstaculoValue = request->getParam(yObstaculoKey, true)->value();
+            // Adiciona coordenadas do obstáculo à saída
+            outputData += ", " + xObstaculoValue + "," + yObstaculoValue;
+        } else {
+            break; // Para quando não houver mais obstáculos
+        }
+    }
+
+    outputData += ";"; // 3,2,4,1,4.24,24,2,4; (roboX, roboY, roboTheta, obst1X, obst1Y, obst2X, obst2Y, obst3X, obst3Y)
+
+    // Log dos dados a serem enviados
+    Serial.println(outputData);
+
+    // Envia a string formatada para o Arduino Mega
+    mySerial.println(outputData);
 
     // Muda o status para "ocupado"
     status = "ocupado";
 
+    // Responde ao cliente
     request->send(200, "text/plain", "Values received and sent to Arduino Mega");
-  });
+});
+
 
 
    // Adiciona a nova rota /status que retorna "desocupado"

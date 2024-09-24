@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -24,6 +25,8 @@ import com.example.robosmart.utils.TipoFragment;
 import com.google.android.material.bottomappbar.BottomAppBar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import org.opencv.android.OpenCVLoader;
+
 public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
 
@@ -39,11 +42,16 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        if(OpenCVLoader.initDebug()){
+            //System.loadLibrary("opencv_java4");
+            Log.e("OpenCV", "SUCESSO");
+        }else{
+            Log.e("OpenCV", "FALHA");
+        }
+
         inicializarToolbar();
         inicializarBottomBar();
         alterarFragment(CapturaImagemFragment.newInstance(TipoFragment.TRACAR_ROTA));
-
-
 
         binding.bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override

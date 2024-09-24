@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -23,6 +24,7 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.robosmart.R;
+import com.example.robosmart.data.repository.ComunicacaoEsp;
 import com.example.robosmart.databinding.FragmentCapturaImagemBinding;
 import com.example.robosmart.ui.viewmodel.ImagemViewModel;
 import com.example.robosmart.utils.TipoFragment;
@@ -50,6 +52,13 @@ public class CapturaImagemFragment extends Fragment {
     private TextInputEditText editTextComprimento;
     private TextInputEditText editTextLargura;
     private Spinner spinner;
+    private Bitmap bitmap;
+    private  float xBitmapRobo;
+    private  float yBitmapRobo;
+    private  double thetaZ;
+    private float [] xObstaculo;
+    private float [] yObstaculo;
+
 
     private FragmentCapturaImagemBinding binding;
     private TipoFragment tipoFragment;
@@ -70,8 +79,9 @@ public class CapturaImagemFragment extends Fragment {
 
         imageViewModel.getImageBitmap().observe(getViewLifecycleOwner(), new Observer<Bitmap>() {
             @Override
-            public void onChanged(Bitmap bitmap) {
-                if(bitmap != null){
+            public void onChanged(Bitmap bitmapImagem) {
+                if(bitmapImagem != null){
+                    bitmap = bitmapImagem;
                     binding.imageViewImagem.setImageBitmap(bitmap);
                     detectarMarcadorAruco(bitmap);
                 }else{
@@ -80,10 +90,27 @@ public class CapturaImagemFragment extends Fragment {
             }
         });
 
+
+        binding.imageViewImagem.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    float x = event.getX();
+                    float y = event.getY();
+
+                    calculateRealCoordinates(xBitmapRobo, yBitmapRobo, thetaZ, x, y, xObstaculo, yObstaculo);
+                    view.performClick(); // Importante para acessibilidade
+                    return true;
+                }
+                return false;
+            }
+        });
+
         binding.buttonCapturarImagem.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 imageViewModel.captureImage();
+                //detectarMarcadorAruco(bitmap);
             }
         });
 
@@ -105,7 +132,45 @@ public class CapturaImagemFragment extends Fragment {
         return binding.getRoot();
     }
 
+    private void calculateRealCoordinates(float xBitmapRobo, float yBitmapRobo, double thetaZ, float x, float y, float[] xObstaculo, float[] yObstaculo) {
+        Log.i("Touch", "TOQUEI");
+        SharedPreferences sharedPreferences = getContext().getSharedPreferences("DimensoesAmbiente", MODE_PRIVATE);
+        String larguraReal = sharedPreferences.getString("comprimento", "");
+        String alturaReal = sharedPreferences.getString("largura", "");
+
+        float larguraRealfloat = Float.parseFloat(larguraReal);
+        float alturaRealfloat = Float.parseFloat(alturaReal);
+
+        int imageViewLargura = binding.imageViewImagem.getWidth();
+        int imageViewAltura= binding.imageViewImagem.getHeight();
+        int bitmapLargura = bitmap.getWidth();
+        int bitmapAltura = bitmap.getHeight();
+
+        float scaleX = (float) bitmapLargura / imageViewLargura;
+        float scaleY = (float) bitmapAltura / imageViewAltura;
+
+        float bitmapX = x * scaleX;
+        float bitmapY = y * scaleY;
+
+        float goalX = (bitmapX / bitmapLargura) * larguraRealfloat;
+        float goalY = (bitmapY / bitmapAltura) * alturaRealfloat;
+        float roboX = (xBitmapRobo / bitmapLargura) * larguraRealfloat;
+        float roboY = (yBitmapRobo / bitmapAltura) * alturaRealfloat;
+        double roboTheta = thetaZ;
+        for(int i = 0; i < xObstaculo.length ; i++){
+            xObstaculo[i]  = (xObstaculo[i] /  bitmapLargura) * larguraRealfloat;
+            yObstaculo[i]  = (yObstaculo[i] /  bitmapAltura) * alturaRealfloat;
+
+        }
+        Log.i("Touch", "ANTES DA CHAMADA DA COMUNICAÇÃO");
+
+        ComunicacaoEsp comunicacaoEsp = new ComunicacaoEsp(roboX, roboY, roboTheta, goalX, goalY, xObstaculo, yObstaculo);
+        comunicacaoEsp.execute();
+        Log.i("Touch", "DISK CHAMOU");
+    }
+
     private void detectarMarcadorAruco(Bitmap bitmap) {
+        Log.i("Bitmap", "Bitmap: " + bitmap.toString());
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
 
@@ -118,6 +183,7 @@ public class CapturaImagemFragment extends Fragment {
         Imgproc.cvtColor(mat, grayMat, Imgproc.COLOR_BGR2GRAY);
 
         Dictionary dictionary = Aruco.getPredefinedDictionary(definirMarcadorEscolhido());
+        Log.i("Dicionario", "Dicionario: "+ dictionary);
 
         DetectorParameters parameters = DetectorParameters.create();
 
@@ -128,9 +194,7 @@ public class CapturaImagemFragment extends Fragment {
         // Detectar os marcadores ArUco
         Aruco.detectMarkers(grayMat, dictionary, corners, ids, parameters);
 
-
         if (ids.total() > 0) {
-
             // Parâmetros da câmera (novos parâmetros de calibração e distorção)
             Mat cameraMatrix = new Mat(3, 3, CvType.CV_64FC1);
             cameraMatrix.put(0, 0, 1893.25899, 0, 836.453929, 0, 1896.27302, 609.898826, 0, 0, 1); // Nova matriz de calibração
@@ -140,11 +204,9 @@ public class CapturaImagemFragment extends Fragment {
 
             float markerLength = 0.1f; // Ajuste para o tamanho real do marcador
 
-
             Mat rvecs = new Mat(); // Vetores de rotação
             Mat tvecs = new Mat(); // Vetores de translação
             Aruco.estimatePoseSingleMarkers(corners, markerLength, cameraMatrix, distCoeffs, rvecs, tvecs);
-
 
             StringBuilder idsText = new StringBuilder("Marcadores Detectados: ");
             StringBuilder poseText = new StringBuilder();
@@ -166,11 +228,21 @@ public class CapturaImagemFragment extends Fragment {
                 Calib3d.projectPoints(objectPoints, new MatOfDouble(rvec), new MatOfDouble(tvec),
                         cameraMatrix, distCoeffs, imagePoints);
 
+                xObstaculo = new float[(int) ids.total()];
+                yObstaculo = new float[(int) ids.total()];
 
-                // Acessar as coordenadas 2D projetadas no MatOfPoint2f
-                Point[] projectedPoints = imagePoints.toArray();
-                float xBitmap = (float) projectedPoints[0].x;
-                float yBitmap = (float) projectedPoints[0].y;
+                if(markerId == pegarIdRobo()){
+                    // Acessar as coordenadas 2D projetadas no MatOfPoint2f
+                    Point[] projectedPoints = imagePoints.toArray();
+                    xBitmapRobo = (float) projectedPoints[0].x;
+                    yBitmapRobo = (float) projectedPoints[0].y;
+                }else{
+                    Point[] projectedPoints = imagePoints.toArray();
+                    Log.i("Project Point", "valor: " + projectedPoints[0].x);
+                    xObstaculo[i] = (float) projectedPoints[0].x;
+                    yObstaculo[i] = (float) projectedPoints[0].y;
+                }
+
 
                 // Converter rvec em uma matriz de rotação
                 Mat rotationMatrix = new Mat();
@@ -180,23 +252,39 @@ public class CapturaImagemFragment extends Fragment {
                 double thetaX = Math.atan2(rotationMatrix.get(2, 1)[0], rotationMatrix.get(2, 2)[0]);
                 double thetaY = Math.atan2(-rotationMatrix.get(2, 0)[0],
                         Math.sqrt(Math.pow(rotationMatrix.get(2, 1)[0], 2) + Math.pow(rotationMatrix.get(2, 2)[0], 2)));
-                double thetaZ = Math.atan2(rotationMatrix.get(1, 0)[0], rotationMatrix.get(0, 0)[0]);
+
+                if(markerId == pegarIdRobo()){
+                    thetaZ = Math.atan2(rotationMatrix.get(1, 0)[0], rotationMatrix.get(0, 0)[0]);
+                    thetaZ = Math.toDegrees(thetaZ);
+                }
+
 
                 // Converta os ângulos de radianos para graus, se necessário
                 thetaX = Math.toDegrees(thetaX);
                 thetaY = Math.toDegrees(thetaY);
-                thetaZ = Math.toDegrees(thetaZ);
+
 
                 // Adicionar a posição e rotação ao texto de saída
                 poseText.append(String.format("Marcador %d - Posição (x, y, z): [%.2f, %.2f, %.2f]\nPosição Bitmap (x, y): [%.2f, %.2f]\nRotação (pitch, yaw, roll): [%.2f, %.2f, %.2f]\n",
-                        markerId, tvec[0], tvec[1], tvec[2], xBitmap, yBitmap, thetaX, thetaY, thetaZ));
+                        markerId, tvec[0], tvec[1], tvec[2], xBitmapRobo, yBitmapRobo, thetaX, thetaY, thetaZ));
 
                 // Desenhar os eixos de cada marcador (opcional)
                 drawCustomAxis(mat, cameraMatrix, distCoeffs, rvecs.row(i), tvecs.row(i), 0.05f);
             }
 
+            // Exibir a imagem com os eixos desenhados
+            Bitmap resultBitmap = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
+            org.opencv.android.Utils.matToBitmap(mat, resultBitmap);
+            binding.imageViewImagem.setImageBitmap(resultBitmap);
+
         }
 
+    }
+
+    private int pegarIdRobo() {
+        SharedPreferences sharedPreferences = getContext().getSharedPreferences("IdRobo", MODE_PRIVATE);
+        String idRobo = sharedPreferences.getString("id", "");
+        return  Integer.parseInt(idRobo);
     }
 
     public void drawCustomAxis(Mat image, Mat cameraMatrix, MatOfDouble distCoeffs, Mat rvec, Mat tvec, float length) {

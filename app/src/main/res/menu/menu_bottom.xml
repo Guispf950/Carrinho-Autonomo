@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/itemMenu_tracarRota"
+        android:icon="@drawable/icon_rota"
+        android:title="Traçar rota"
+        app:showAsAction="always" />
+    <item android:title="Joystick"
+        android:id="@+id/itemMenu_joystick"
+        android:icon="@drawable/icon_joystick"/>
+    <item android:title="Definir objetivo"
+        android:id="@+id/itemMenu_definirObjetivo"
+        android:icon="@drawable/icon_touchposition"/>
+</menu>

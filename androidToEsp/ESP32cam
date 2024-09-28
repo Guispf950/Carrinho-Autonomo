@@ -16,8 +16,8 @@
 
 
 // Replace with your network credentials
-const char* ssid = "CLARO_2G1ED171";
-const char* password = "B71ED171";
+const char* ssid = "Monteiro";
+const char* password = "12345678";
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
@@ -164,38 +164,12 @@ void setup() {
     request->send(SPIFFS, FILE_PHOTO, "image/jpg", false);
   });
 
-  server.on("/enviar-coord", HTTP_POST, [](AsyncWebServerRequest *request) {
-    String value1 = "";
-    String value2 = "";
-    String value3 = "";
-    String value4 = "";
+server.on("/obter-foto", HTTP_GET, [](AsyncWebServerRequest * request) {
+    capturePhotoSaveSpiffs();
+    request->send(SPIFFS, FILE_PHOTO, "image/jpg", false);
+  });
 
-    if (request->hasParam("value1", true)) {
-        value1 = request->getParam("value1", true)->value();
-    }
-    if (request->hasParam("value2", true)) {
-        value2 = request->getParam("value2", true)->value();
-    }
-    if (request->hasParam("value3", true)) {
-        value3 = request->getParam("value3", true)->value();
-    }
-    if (request->hasParam("value4", true)) {
-        value4 = request->getParam("value4", true)->value();
-    }
-
-    Serial.print("Value 1: ");
-    Serial.println(value1);
-    Serial.print("Value 2: ");
-    Serial.println(value2);
-    Serial.print("Value 3: ");
-    Serial.println(value3);
-    Serial.print("Value 4: ");
-    Serial.println(value4);
-
-    request->send(200, "text/plain", "Values received successfully");
-});
-
-
+ 
 
 
 

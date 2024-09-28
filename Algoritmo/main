@@ -1,4 +1,4 @@
-  #include <HMC5883L_Simple.h>
+ //#include <HMC5883L_Simple.h>
   #include <Wire.h>
   #include "Robo.h"
 
@@ -11,7 +11,7 @@
   float pulsosPorRevolucao = 20;
   float distanciaEntreRodas = 22;
 
-  HMC5883L_Simple Compass;
+  //HMC5883L_Simple Compass;
 
   const byte interruptPin1 = 2;   
   const byte interruptPin2 = 3;   
@@ -25,6 +25,10 @@
   int IN2 = 9;
   int IN3 = 10;
   int IN4 = 11;
+  
+  int ENA = 12;
+  int ENB = 13;
+
 
   const int pinoTrig[] = {49, 51, 53};
   const int pinoEcho[] = {48, 50, 52};
@@ -39,13 +43,13 @@
 
   float thetaAtual = 0;
 
-  float k_rep = 5;
-  float d0 = 1.5; //zona de influencia obstaculos
+  float k_rep = 5000;
+  float d0 = 25; //zona de influencia obstaculos
   float dq = 1; //ao estar 1m do objetivo o modo de aproximação passa de conico para quadratico
-  float dt = 0.1;
-  float maxSpeed = 1.5;
-  float k_att_quadratico = 100;
-  float k_att_conico = 10;
+  float dt = 5;
+  float maxSpeed = 100;
+  float k_att_quadratico = 5.0;
+  float k_att_conico = 0.1;
 
   float forceX = 0;
   float forceY = 0;
@@ -53,7 +57,8 @@
   float* obstaculosX;
   float* obstaculosY;
   int numObstaculos = 0;
-
+ 
+ 
   String status= "desocupado";
 
   void setup() {
@@ -61,6 +66,8 @@
     pinMode(IN2, OUTPUT); 
     pinMode(IN3, OUTPUT);
     pinMode(IN4, OUTPUT);
+    pinMode(ENA, OUTPUT);
+    pinMode(ENB, OUTPUT);
 
     pinMode(interruptPin1, INPUT_PULLUP);  
     pinMode(interruptPin2, INPUT_PULLUP);  
@@ -68,18 +75,19 @@
     attachInterrupt(digitalPinToInterrupt(interruptPin1), handleInterruptA, HIGH); 
     attachInterrupt(digitalPinToInterrupt(interruptPin2), handleInterruptB, HIGH);  
     
-    for (int i = 0; i < 3; i++) {
+    /*for (int i = 0; i < 3; i++) {
       pinMode(pinoTrig[i], OUTPUT);
       pinMode(pinoEcho[i], INPUT);
-    }
+    } */
 
-    Serial.begin(115200); // Configura a taxa de transmissão para 115200 bps
+    Serial.begin(115200); // Configfura a taxa de transmissão para 115200 bps
+    Serial1.begin(9600);
   
-    Wire.begin();
+    /*Wire.begin();
     Compass.SetDeclination(-21, 16, 'W');
     Compass.SetSamplingMode(COMPASS_SINGLE);
     Compass.SetScale(COMPASS_SCALE_130);
-    Compass.SetOrientation(COMPASS_HORIZONTAL_X_NORTH);
+    Compass.SetOrientation(COMPASS_HORIZONTAL_X_NORTH); */
 
     robo = new Robo(0, 0, 0);
 
@@ -91,72 +99,93 @@
   }
 
   void loop() {
-    if (status == "desocupado") { 
-        while (Serial.available()) {
-        String entrada = Serial.readStringUntil('\n');
-        processarEntrada(entrada);
-        }
-      }
-    navigateToPoint(goalX, goalY);
-    delay(1000);
-  }
 
-  
 
-  void processarEntrada(const String& input) {
-      // Variáveis temporárias para leitura
-      String RoboX, RoboY, RoboTheta, goalX, goalY;
-      int pos = 0;
-
-      // Lendo as coordenadas do robô e do objetivo
-      RoboX = input.substring(pos, input.indexOf(';', pos));
-      pos = input.indexOf(';', pos) + 1;
-      RoboY = input.substring(pos, input.indexOf(';', pos));
-      pos = input.indexOf(';', pos) + 1;
-      RoboTheta = input.substring(pos, input.indexOf(';', pos));
-      pos = input.indexOf(';', pos) + 1;
-      goalX = input.substring(pos, input.indexOf(';', pos));
-      pos = input.indexOf(';', pos) + 1;
-      goalY = input.substring(pos, input.indexOf(';', pos));
-
-      // Convertendo para float
-      cordX = RoboX.toFloat();
-      cordY = RoboY.toFloat();
-      thetaAtual = RoboTheta.toFloat();
-      goalX = goalX.toFloat();
-      goalY = goalY.toFloat();
-
-      // Contando o número de delimitadores ';'
-      int numDelimitadores = 0;
-      for (int i = 0; i < input.length(); i++) {
-          if (input.charAt(i) == ';') {
-              numDelimitadores++;
+     
+    if (status == "desocupado") {
+        if (Serial1.available()) {
+          String entrada = Serial1.readStringUntil(';');
+          entrada.trim();
+          
+          if(entrada != ""){
+            processarEntrada(entrada);
+            delay(100);
+            
           }
-      }
-
-      // Calculando o número de obstáculos
-      numObstaculos = (numDelimitadores - 5) / 2;
-
-      
-      obstaculosX = new float[numObstaculos];
-      obstaculosY = new float[numObstaculos];
-
-      // Extraindo as coordenadas dos obstáculos
-      for (int i = 0; i < numObstaculos; i++) {
-          obstaculosX[i] = input.substring(pos, input.indexOf(';', pos)).toFloat();
-          pos = input.indexOf(';', pos) + 1;
-          obstaculosY[i] = input.substring(pos, input.indexOf(';', pos)).toFloat();
-          pos = input.indexOf(';', pos) + 1;
-      }
-
-      // Atualizando o robô
-      robo->SetX(cordX);
-      robo->SetY(cordY);
-      robo->SetTheta(thetaAtual);
-
-      Serial.print("ocupado");
-      
+        }
+      } else {
+        navigateToPoint(goalX, goalY);
+      } 
+   
+   
   }
+void processarEntrada(const String& input) {
+    // Variáveis temporárias para leitura
+    String RoboX, RoboY, RoboTheta, tempGoalX, tempGoalY;
+    int pos = 0;
+
+    // Lendo as coordenadas do robô e do objetivo
+    RoboX = input.substring(pos, input.indexOf(',', pos));
+    pos = input.indexOf(',', pos) + 1;
+    RoboY = input.substring(pos, input.indexOf(',', pos));
+    pos = input.indexOf(',', pos) + 1;
+    RoboTheta = input.substring(pos, input.indexOf(',', pos));
+    pos = input.indexOf(',', pos) + 1;
+    tempGoalX = input.substring(pos, input.indexOf(',', pos));
+    pos = input.indexOf(',', pos) + 1;
+    tempGoalY = input.substring(pos, input.indexOf(',', pos));
+    pos = input.indexOf(',', pos) + 1;
+
+    
+    // Convertendo para float
+    cordX = RoboX.toFloat();
+    cordY = RoboY.toFloat();
+    thetaAtual = RoboTheta.toFloat();
+    goalX = tempGoalX.toFloat();  // Atualizando as variáveis globais
+    goalY = tempGoalY.toFloat();
+
+    // Contando o número de delimitadores ',' para determinar o número de obstáculos
+    int numDelimitadores = 0;
+    for (int i = 0; i < input.length(); i++) {
+        if (input.charAt(i) == ',') {
+            numDelimitadores++;
+        }
+    }
+
+    // Calculando o número de obstáculos
+    numObstaculos = (numDelimitadores - 4) / 2;
+
+    // Alocando memória para os arrays de obstáculos
+    obstaculosX = new float[numObstaculos];
+    obstaculosY = new float[numObstaculos];
+
+    // Extraindo as coordenadas dos obstáculos
+    for (int i = 0; i < numObstaculos; i++) {
+        obstaculosX[i] = input.substring(pos, input.indexOf(',', pos)).toFloat();
+        pos = input.indexOf(',', pos) + 1;
+        obstaculosY[i] = input.substring(pos, input.indexOf(',', pos)).toFloat();
+        pos = input.indexOf(',', pos) + 1;
+
+        
+    }
+
+    // Atualizando o robô
+    robo->SetX(cordX);
+    robo->SetY(cordY);
+    robo->SetTheta(thetaAtual);
+
+
+     
+
+    // Exibindo no Serial Monitor
+    Serial.print("Mensagem recebida: ");
+    Serial.println(input);
+    Serial.print("Status: ocupado");
+    Serial1.print("ocupado;");
+    status = "ocupado";
+    Serial1.flush();
+} 
+  
 
   void motorControl(int in1, int in2, int state1, int state2) {
     digitalWrite(in1, state1);
@@ -164,34 +193,58 @@
   }
 
   void andarFrente(int cm) {
+    Serial.print("ANDANDO PARA FRENTE");
+    Serial.println(cm);
     movimentoReto = false;
     int pulsos = cm / 1.1;
-    float anguloAntes = robo->GetAtualTheta();
-    Serial.println(anguloAntes);
+    float anguloAntes = robo->GetTheta();
+    pulseCountA = 0;
+    pulseCountB = 0;
 
     while (!movimentoReto) {
       motorControl(IN1, IN2, HIGH, LOW);
       motorControl(IN3, IN4, HIGH, LOW);
 
-      if (pulseCountA >= pulsos) {
-        motorControl(IN1, IN2, HIGH, HIGH); // Freia a roda
-      }
-      if (pulseCountB >= pulsos) {
-        motorControl(IN3, IN4, HIGH, HIGH); // freia a roda
-      }
+      // Diminui a potência quando faltar 10 pulsos
+        if (pulseCountA >= pulsos - 15) {
+            analogWrite(ENA, 255); // Reduz a potência do motor A
+        } else if(pulseCountA >= pulsos - 5){
+            analogWrite(ENA, 255); // Reduz a potência do motor A
+        } 
+        else {
+            analogWrite(ENA, 255); // Potência máxima
+        }
+        if (pulseCountB >= pulsos - 15) {
+            analogWrite(ENB, 255); // Reduz a potência do motor B
+        } else if(pulseCountB >= pulsos - 5 ){
+          analogWrite(ENB, 255); // Reduz a potência do motor A
+        } 
+        else {
+            analogWrite(ENB, 255); // Potência máxima
+        }
+
+        if (pulseCountA >= pulsos) {
+            motorControl(IN1, IN2, LOW, LOW); // Freia a roda A
+            delay(100);
+        }
+        if (pulseCountB >= pulsos) {
+            motorControl(IN3, IN4, LOW, LOW); // Freia a roda B
+            delay(100);
+        }
 
       if (pulseCountA >= pulsos && pulseCountB >= pulsos) {
         //movimento concluido
         motorControl(IN1, IN2, LOW, LOW);
         motorControl(IN3, IN4, LOW, LOW);
+        delay(300);
         
         movimentoReto = true;
         pulseCountA = 0;
         pulseCountB = 0;
-        float anguloDepois = robo->GetAtualTheta();
-        Serial.println(anguloDepois);
-
-        atualizarPosicao();
+        float anguloDepois = robo->GetTheta();
+         
+        
+         
 
         // Expande o array se necessário
         if (caminhoSize >= caminhoCapacity) {
@@ -210,49 +263,83 @@
   }
 
   void girarPosicao(int angulo) {
-    int comprimentoArco = (angulo/360) * (2 * M_PI * distanciaEntreRodas);
+    
+    Serial.print("GIRANDO POSICAO : ");
+    Serial.println(angulo);
+    
+    int comprimentoArco = (angulo/360.0) * (2 * M_PI * distanciaEntreRodas);
     int pulsos = round(comprimentoArco / 1.1);
-    float anguloAntes = robo->GetAtualTheta();
-
+    float anguloAntes = robo->GetTheta();
+    pulseCountA = 0;
+    pulseCountB = 0;
     if (!movimentoGirar) {
       if (pulsos > 0) {  
       // Giro no sentido horário
       motorControl(IN1, IN2, HIGH, LOW); // Motor A (sentido horário)
       motorControl(IN3, IN4, LOW, HIGH); // Motor B (sentido anti-horário)
+      
+       Serial.print("ESTOU AQUI 1 ");
 
       } else if (pulsos < 0) {  
       // Giro no sentido anti-horário
       motorControl(IN1, IN2, LOW, HIGH); // Motor A (sentido anti-horário)
       motorControl(IN3, IN4, HIGH, LOW); // Motor B (sentido horário)
+       Serial.print("ESTOU AQUI 2 ");
       }
       movimentoGirar = true;
     }
 
-    int pulsosCadaRoda = abs(pulsos)/2; // divide os pulsos pela metade para cada roda
+    int pulsosCadaRoda = abs(pulsos)/2.0; // divide os pulsos pela metade para cada roda
+    Serial.print("pulsos roda : ");
+    Serial.println(pulsosCadaRoda);
+
+
     while(movimentoGirar){
-      if (pulseCountA >= pulsosCadaRoda ) {
+      
+      if(pulseCountA >= pulsosCadaRoda-15){
+         analogWrite(ENA, 255); // Reduz a potência do motor A
+          
+      } else {
+        analogWrite(ENA, 255); // Potência máxima
+      }
+      if(pulseCountB >= pulsosCadaRoda-15){
+         
+         analogWrite(ENB, 255); // Reduz a potência do motor A
+      } else {
+         
+         analogWrite(ENB, 255); // Potência máxima
+      }
+
+      if (pulseCountA >= pulsosCadaRoda ) { 
+          
         motorControl(IN1, IN2, HIGH, HIGH); //Freia a roda
       }
       if (pulseCountB >= pulsosCadaRoda) {
         motorControl(IN3, IN4, HIGH, HIGH); //Freia a roda
+            
       }
 
       if (pulseCountA >= pulsosCadaRoda && pulseCountB >= pulsosCadaRoda) {
         //movimento concluido
+      
         motorControl(IN1, IN2, LOW, LOW);
         motorControl(IN3, IN4, LOW, LOW);
-        //atualiza o angulo do carro
-        float anguloDepois = robo->GetAtualTheta();
+
         //verifica se o carro girou o angulo certo e se esta dentro da margem de erro
-        float anguloRotacionado = anguloDepois - anguloAntes;
-        if (abs(anguloRotacionado - angulo) > 5) { // definir a margem de erro (aqui esta 5º)
-          pulseCountA = 0;
-          pulseCountB = 0;
-        // girarPosicao(angulo - anguloRotacionado); //rotaciona o restante (para chegar o mais proximo do angulo)
+        int result = pulseCountA-pulseCountB;
+        int grausAjuste = round((result * 1.1 * 360) / (2 * M_PI * distanciaEntreRodas)); 
+        //atualiza o angulo do carro
+        //float anguloDepois = robo->GetTheta();
+       
+         
+        if (abs(grausAjuste) > 25) { // definir a margem de erro (aqui esta 12º)
+          girarPosicao(grausAjuste); //rotaciona o restante (para chegar o mais proximo do angulo)
         } else {
           movimentoGirar = false; // define movimentoGirar como falso para sair do while e finalizar o movimento
           //atualiza as coordenadas do carrinho 
-          atualizarPosicao();
+          status = "desocupado";
+          Serial1.print("desocupado;");
+         
           //verifica se o vetor ainda tem espaço para adcionar mais um objeto carrinho,
           // caso nao tenha dobra o tamanho e passa todos os dados para o novo vetor
           if (caminhoSize >= caminhoCapacity) {
@@ -265,7 +352,7 @@
             caminho = novoCaminho;
           }
           //adciona um OBJ robo no vetor caminho
-          caminho[caminhoSize++] = Robo(robo->GetX(), robo->GetY(), robo->GetAtualTheta());
+          caminho[caminhoSize++] = Robo(robo->GetX(), robo->GetY(), robo->GetTheta());
         }
       }
     }
@@ -277,27 +364,46 @@
     float distance = sqrt(deltaX * deltaX + deltaY * deltaY);
     float angleToTarget = atan2(deltaY, deltaX) * 180 / M_PI;
 
-    float angleToTurn = angleToTarget - robo->GetAtualTheta();
+    float angleToTurn = angleToTarget - robo->GetTheta();
+    
 
-    girarPosicao(angleToTurn);
-
-    float stepSize = 10.0;
+    float stepSize = 30.0;
 
     while (distance > 3) {
+       Serial.print("ESTOU EMBAIXO DE  girarPosicao(angleToTurn); ");
       float *forces = atualizarForcas(goalX, goalY);
       float forceX = forces[0];
       float forceY = forces[1];
+      Serial.print("Forca X:") ;
+      Serial.println(forceX) ;
+      Serial.print("Forca Y:") ;
+      Serial.println(forceY) ;
+
       float resultantAngle = atan2(forceY, forceX) * 180 / M_PI;
+      float angleToTurn = resultantAngle - robo->GetTheta();
+      Serial.print("resultantAngle:") ;
+      Serial.println(resultantAngle) ;
 
-      float angleToTurn = resultantAngle - robo->GetAtualTheta();
-      girarPosicao(angleToTurn);
-
+      if(abs(angleToTurn) > 0) {
+        girarPosicao(angleToTurn);
+      }
+      Serial.print("Angulo resultantAngle: ");
+      Serial.println(resultantAngle);
+      Serial.print("Angulo robo->GetTheta() ");
+      Serial.println(robo->GetTheta());
+     
+      
       if(distance < stepSize) { // Se a distancia for menor que stepSize, o robo anda a distancia restante
         andarFrente(distance);
+        
+   
       } else {
         andarFrente(stepSize);
+         
+ 
       }
-
+      status = "desocupado";
+      Serial1.print("desocupado;");
       atualizarPosicao();
       deltaX = goalX - robo->GetX();
       deltaY = goalY - robo->GetY();
@@ -307,6 +413,8 @@
 
   float* atualizarForcas(float goalX, float goalY) {
     float distToGoal = sqrt(pow(goalX - robo->GetX(), 2) + pow(goalY - robo->GetY(), 2));
+    Serial.print("Distancia para o objetivo: ");
+    Serial.println(distToGoal);
 
     float forceAttConicoX = 0;
     float forceAttConicoY = 0;
@@ -316,10 +424,18 @@
 
     if (distToGoal < dq) {
       forceAttQuadraticoX = k_att_quadratico * (goalX - robo->GetX()) * distToGoal;
-      forceAttQuadraticoY = k_att_quadratico * (goalY - robo->GetY()) * distToGoal;;
+      forceAttQuadraticoY = k_att_quadratico * (goalY - robo->GetY()) * distToGoal;
+      Serial.print("forceAttQuadraticoX: ");
+      Serial.println(forceAttQuadraticoX);
+      Serial.print("forceAttQuadraticoY: ");
+      Serial.println(forceAttQuadraticoY);
     } else {
       forceAttConicoX = k_att_conico * (goalX - robo->GetX());
       forceAttConicoY = k_att_conico * (goalY - robo->GetY());
+      Serial.print("forceAttConicoX: ");
+      Serial.println(forceAttConicoX);
+      Serial.print("forceAttConicoY: ");
+      Serial.println(forceAttConicoY);
     }
 
     float forceRepX = 0;
@@ -330,44 +446,54 @@
         float obstDistX = obstaculosX[i] - robo->GetX();
         float obstDistY = obstaculosY[i] - robo->GetY();
         float obstDist = sqrt(pow(obstDistX, 2) + pow(obstDistY, 2));
-
+         Serial.print("obstDist: ");
+        Serial.println(obstDist);
+         
+         
         // Calcula a força de repulsão apenas se o obstáculo estiver dentro da zona de influência
         if (obstDist < d0) {
-          float repulsion = k_rep * (1 / obstDist - 1 / d0) / pow(obstDist, 2);
+          float repulsion = k_rep  * (1.0 / obstDist - 1.0 / d0) / pow(obstDist, 2.0);
           forceRepX += repulsion * (obstDistX / obstDist);
+           Serial.print("obstDistX: ");
+          Serial.println(obstDistX);
+          Serial.print("obstDist: ");
+          Serial.println(obstDist);
+
           forceRepY += repulsion * (obstDistY / obstDist);
+           Serial.print("obstDistY: ");
+          Serial.println(obstDistY);
+          Serial.print("obstDist: ");
+          Serial.println(obstDist);
+
+
+           Serial.print("forceRepX: ");
+          Serial.println(forceRepX);
+           Serial.print("forceRepY: ");
+          Serial.println(forceRepY);
         }
     }
-    } else {
-      for (int i = 0; i < numSensores; i++) {
-      float distance = calculaMediaDasDistancias(pinoTrig[i], pinoEcho[i]);
+    } 
 
-      if (distance < d0) {
-        float angle = angulosSensores[i] * M_PI / 180.0; // Converte ângulo de graus para radianos
-        float sensorX = cos(angle);
-        float sensorY = sin(angle);
-
-        float repulsion = k_rep * (1 / distance - 1 / d0) / pow(distance, 2);
-        forceRepX += repulsion * sensorX;
-        forceRepY += repulsion * sensorY;
-      }
-    }
-    
-    }
-    
-
-    forceX = forceAttConicoX + forceAttQuadraticoX + forceRepX;
-    forceY = forceAttConicoY + forceAttQuadraticoY + forceRepY;
+    forceX = forceAttConicoX + forceAttQuadraticoX - forceRepX;
+    forceY = forceAttConicoY + forceAttQuadraticoY - forceRepY;
 
     float forceMagnitude = sqrt(forceX * forceX + forceY * forceY);
     if (forceMagnitude > maxSpeed) {
       forceX = (forceX / forceMagnitude) * maxSpeed;
       forceY = (forceY / forceMagnitude) * maxSpeed;
+      Serial.print("Forca X1:") ;
+      Serial.println(forceX) ;
+      Serial.print("Forca Y1:") ;
+      Serial.println(forceY) ;
     }
 
     static float result[2];
     result[0] = forceX * dt;
     result[1] = forceY * dt;
+    Serial.print("Forca X2:") ;
+      Serial.println(forceX) ;
+      Serial.print("Forca Y2:") ;
+      Serial.println(forceY) ;
     return result;
   }
 
@@ -416,18 +542,26 @@
   }
 
   void atualizarPosicao() {
-      Serial.print("desocupado");
-      status = "desocupado";
-
-      if (status == "desocupado") { 
-        while (Serial.available()) {
-        String entrada = Serial.readStringUntil('\n');
-        processarEntrada(entrada);
+      // Imprime o status atual e envia pela Serial1
+    
+      if (status == "desocupado") {
+       
+        while (status == "desocupado") {
+          
+          String entrada = Serial1.readStringUntil(';');
+          entrada.trim();
+          if(entrada != ""){
+            Serial.print("ESSA EH A MENSAGEM DO ATUALIZAR: ");
+            Serial.println(entrada);
+            processarEntrada(entrada);
+            delay(100);
+          }
         }
-      }   
-        robo->SetX(cordX);
-        robo->SetY(cordY);
-        robo->SetTheta(thetaAtual);
-        Serial.print("ocupado");
-        } 
-      
+    
+      }  
+  }
+
+
+
+
+ 

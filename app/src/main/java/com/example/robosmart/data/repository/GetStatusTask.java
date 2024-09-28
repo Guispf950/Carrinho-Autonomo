@@ -22,7 +22,7 @@ public class GetStatusTask extends AsyncTask<Void, Void, String> {
     protected String doInBackground(Void... voids) {
         try {
             // URL do ESP32 (substitua pelo IP do seu ESP32)
-            URL url = new URL("http://192.168.141.71/status");
+            URL url = new URL("http://192.168.71.71/status");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 

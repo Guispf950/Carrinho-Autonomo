@@ -41,7 +41,7 @@ public class ComunicacaoEsp extends AsyncTask<Void, Void, String> {
 
         try {
             // URL do servidor ESP32
-            URL url = new URL("http://192.168.141.71/enviar-coord");
+            URL url = new URL("http://192.168.71.71/enviar-coord");
 
             // Abre a conexão
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();

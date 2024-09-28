@@ -27,7 +27,7 @@ public class ComunicacaoEspCam extends AsyncTask<Void, Void, Bitmap> {
     protected Bitmap doInBackground(Void... voids) {
         Bitmap foto = null;
         try {
-            URL url = new URL("http://192.168.141.214/obter-foto");// alterar para /obter-foto
+            URL url = new URL("http://192.168.71.147/obter-foto");// alterar para /obter-foto
             HttpURLConnection conexao = (HttpURLConnection) url.openConnection();
 
             conexao.setReadTimeout(5000);

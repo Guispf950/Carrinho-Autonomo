@@ -69,8 +69,8 @@ public class CapturaImagemFragment extends Fragment {
     private List<Float> yObstaculoList = new ArrayList<>();
     private String status = "desocupado";
     float goalX ,goalY ,roboX, roboY;
-    float bitmapX = 0;
-    float bitmapY = 0;
+    float x = 0;
+    float y = 0;
     double roboTheta = thetaZ;
     Float xObstaculo1[];
     Float yObstaculo1[];
@@ -100,9 +100,9 @@ public class CapturaImagemFragment extends Fragment {
                     binding.imageViewImagem.setImageBitmap(bitmap);
                     detectarMarcadorAruco(bitmap);
                     if(status.equals("desocupado")){
-                        if(bitmapX != 0 && bitmapY != 0){
+                        if(x != 0 && y != 0){
                             Log.i("STATUS2: ", "Status: "+ status.toString());
-                            calculateRealCoordinates(xBitmapRobo, yBitmapRobo, thetaZ, bitmapX, bitmapY, xObstaculoList, yObstaculoList);
+                            calculateRealCoordinates(xBitmapRobo, yBitmapRobo, thetaZ, x, y, xObstaculoList, yObstaculoList);
                         }
 
                     }
@@ -117,8 +117,8 @@ public class CapturaImagemFragment extends Fragment {
             @Override
             public boolean onTouch(View view, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    float x = event.getX();
-                    float y = event.getY();
+                    x = event.getX();
+                    y = event.getY();
                     Log.i("ROBO", "Robo X:" + xBitmapRobo + "Robo Y: " + yBitmapRobo);
                     Log.i("OBSTACULO", "Obstaculo X: " + xObstaculo[0] + "Obstaculo Y: " + yObstaculo[0]);
                     calculateRealCoordinates(xBitmapRobo, yBitmapRobo, thetaZ, x, y, xObstaculoList, yObstaculoList);
@@ -175,8 +175,8 @@ public class CapturaImagemFragment extends Fragment {
         float scaleX = (float) bitmapLargura / imageViewLargura;
         float scaleY = (float) bitmapAltura / imageViewAltura;
 
-        bitmapX = x * scaleX;
-        bitmapY = y * scaleY;
+        float bitmapX = x * scaleX;
+        float bitmapY = y * scaleY;
 
         goalX = (bitmapX / bitmapLargura) * larguraRealfloat;
         goalY = (bitmapY / bitmapAltura) * alturaRealfloat;
@@ -267,10 +267,12 @@ public class CapturaImagemFragment extends Fragment {
         if (ids.total() > 0) {
             // Parâmetros da câmera (novos parâmetros de calibração e distorção)
             Mat cameraMatrix = new Mat(3, 3, CvType.CV_64FC1);
-            cameraMatrix.put(0, 0, 1893.25899, 0, 836.453929, 0, 1896.27302, 609.898826, 0, 0, 1); // Nova matriz de calibração
+            cameraMatrix.put(0, 0, 5956.15371, 0, 847.620094,
+                    0, 5995.95373, 627.955361,
+                    0, 0, 1);  // Nova matriz de calibração
 
             MatOfDouble distCoeffs = new MatOfDouble();
-            distCoeffs.fromArray(-0.304195144, 6.71272605, 0.0105837198, 0.00208301339, -42.8677103); // Novos coeficientes de distorção
+            distCoeffs.fromArray(-0.313798061, -1.72853427, 0.0115039964, -0.00641521804, -159.771898); // Novos coeficientes de distorção
 
             float markerLength = 0.1f; // Ajuste para o tamanho real do marcador
 

@@ -1,16 +1,16 @@
 #include "Robo.h"
 #include <Wire.h>
-#include <HMC5883L_Simple.h>
+//#include <HMC5883L_Simple.h>
 
 // Inicializa um objeto Compass uma vez e usa-o em todos os métodos
-static HMC5883L_Simple Compass;
+//static HMC5883L_Simple Compass;
 
 Robo::Robo(float x1, float y1, float theta1) : x(x1), y(y1), theta(theta1) {
-  Wire.begin();
+  /*Wire.begin();
   Compass.SetDeclination(-21, 16, 'W');  // Configura a declinação magnética
   Compass.SetSamplingMode(COMPASS_SINGLE); // Define o modo de amostragem
   Compass.SetScale(COMPASS_SCALE_130); // Define a escala
-  Compass.SetOrientation(COMPASS_HORIZONTAL_X_NORTH); // Define a orientação do sensor
+  Compass.SetOrientation(COMPASS_HORIZONTAL_X_NORTH); // Define a orientação do sensor */
 }
 
 float Robo::GetX() {
@@ -24,7 +24,8 @@ float Robo::GetTheta(){
   return theta;
 }
 float Robo::GetAtualTheta() {
-  return Compass.GetHeadingDegrees();
+ // return Compass.GetHeadingDegrees();
+ return 0;
 }
 
 void Robo::SetX(float x1) {

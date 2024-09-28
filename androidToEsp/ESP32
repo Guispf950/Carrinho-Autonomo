@@ -1,18 +1,23 @@
+ 
+
 #include <ArduinoJson.h> 
 #include <ArduinoJson.hpp>
 
-#include "WiFi.h"
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+
 #include "Arduino.h"
 #include "soc/soc.h"           // Disable brownout problems
 #include "soc/rtc_cntl_reg.h"  // Disable brownout problems
 #include "driver/rtc_io.h"
-#include <ESPAsyncWebServer.h>
 #include <SPIFFS.h>
 #include <FS.h>
 
+
 // Replace with your network credentials
-const char* ssid = "CLARO_2G1ED171";
-const char* password = "B71ED171";
+const char* ssid = "Monteiro";
+const char* password = "12345678";
 
 String status = "desocupado";  // Inicializa em "desocupado"
 
@@ -113,20 +118,26 @@ void setup() {
     String xRobo = "";
     String yRobo = "";
     String orientacaoRobo = "";
-    
+    String goalX = "";
+    String goalY = "";
     // Recupera os parâmetros do pedido
-    if (request->hasParam("RoboX", true)) {
-        xRobo = request->getParam("RoboX", true)->value();
+    if (request->hasParam("roboX", true)) {
+        xRobo = request->getParam("roboX", true)->value();
     }
-    if (request->hasParam("RoboY", true)) {
-        yRobo = request->getParam("RoboY", true)->value();
+    if (request->hasParam("roboY", true)) {
+        yRobo = request->getParam("roboY", true)->value();
     }
-    if (request->hasParam("RoboTheta", true)) {
-        orientacaoRobo = request->getParam("RoboTheta", true)->value();
+    if (request->hasParam("roboTheta", true)) {
+        orientacaoRobo = request->getParam("roboTheta", true)->value();
     }
-
+    if (request->hasParam("goalX", true)) {
+        goalX = request->getParam("goalX", true)->value();
+    }
+    if (request->hasParam("goalY", true)) {
+        goalY = request->getParam("goalY", true)->value();
+    }
     // Cria um StringBuilder para armazenar todos os dados
-    String outputData = xRobo + ", " + yRobo + ", " + orientacaoRobo;
+    String outputData = xRobo + "," + yRobo + "," + orientacaoRobo + "," + goalX + ","+ goalY;
 
     // Lidar com os obstáculos
     for (int i = 1; i <= 10; i++) { // Mude o limite conforme necessário
@@ -137,7 +148,7 @@ void setup() {
             String xObstaculoValue = request->getParam(xObstaculoKey, true)->value();
             String yObstaculoValue = request->getParam(yObstaculoKey, true)->value();
             // Adiciona coordenadas do obstáculo à saída
-            outputData += ", " + xObstaculoValue + "," + yObstaculoValue;
+            outputData += "," + xObstaculoValue + "," + yObstaculoValue;
         } else {
             break; // Para quando não houver mais obstáculos
         }

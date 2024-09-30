@@ -194,8 +194,8 @@ public class CapturaImagemFragment extends Fragment {
 
         Log.i("Touch", "roboX: " + roboX + " roboY: " + roboY + " roboTheta: " + roboTheta + " goalX: " + goalX + " goalY: " + goalY);
 
-        ComunicacaoEsp comunicacaoEsp = new ComunicacaoEsp(roboX, roboY, roboTheta, goalX, goalY, xObstaculo1, yObstaculo1);
-        comunicacaoEsp.execute();
+        //ComunicacaoEsp comunicacaoEsp = new ComunicacaoEsp(roboX, roboY, roboTheta, goalX, goalY, xObstaculo1, yObstaculo1);
+        //comunicacaoEsp.execute();
         // Iniciar a verificação de status
         checkStatusRepeatedly(); // Chama o método que inicia a verificação
 

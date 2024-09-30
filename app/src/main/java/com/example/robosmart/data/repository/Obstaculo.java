@@ -8,6 +8,10 @@ public class Obstaculo {
         this.y = y;
     }
 
+    public Obstaculo() {
+
+    }
+
     public float getX() {
         return x;
     }

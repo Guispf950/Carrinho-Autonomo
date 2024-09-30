@@ -5,6 +5,8 @@ import android.util.Log;
 import com.example.robosmart.data.repository.Obstaculo;
 import com.example.robosmart.data.repository.Robo;
 
+import java.util.List;
+
 public class CamposPotenciaisArtificiais {
     private static float k_rep = 5000;
     private static float d0 = 25; //zona de influencia obstaculos
@@ -13,7 +15,7 @@ public class CamposPotenciaisArtificiais {
     private static float k_att_quadratico = 5.0f;
     private static float k_att_conico = 0.1f;
 
-    public static float[] atualizarForcas(Robo robo, float goalX, float goalY, Obstaculo[] obstaculos ) {
+    public static float[] atualizarForcas(Robo robo, float goalX, float goalY, List<Obstaculo> obstaculos ) {
         float distToGoal = (float) Math.sqrt(Math.pow(goalX - robo.getX(), 2) + Math.pow(goalY - robo.getY(), 2));
 
 
@@ -37,10 +39,10 @@ public class CamposPotenciaisArtificiais {
         float forceRepX = 0;
         float forceRepY = 0;
 
-        if (obstaculos.length > 0) {
-            for (int i = 0; i < obstaculos.length; i++) {
-                float obstDistX = obstaculos[i].getX() - robo.getX();
-                float obstDistY = obstaculos[i].getY() - robo.getY();
+        if (obstaculos.size() > 0) {
+            for (int i = 0; i < obstaculos.size(); i++) {
+                float obstDistX =  obstaculos.get(i).getX() - robo.getX();
+                float obstDistY =  obstaculos.get(i).getY() - robo.getY();
                 float obstDist = (float) Math.sqrt(Math.pow(obstDistX, 2) + Math.pow(obstDistY, 2));
                 Log.d("AtualizarForcas", "obstDist: " + obstDist);
 

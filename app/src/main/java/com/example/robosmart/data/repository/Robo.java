@@ -3,10 +3,10 @@ package com.example.robosmart.data.repository;
 public class Robo {
     private float x, y, theta;
 
-    public Robo(float x, float y, float theta) {
+    public Robo(float x, float y, double theta) {
         this.x = x;
         this.y = y;
-        this.theta = theta;
+        this.theta = (float) theta;
     }
 
     public Robo() {

@@ -28,7 +28,10 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.robosmart.R;
 import com.example.robosmart.data.repository.ComunicacaoEsp;
 import com.example.robosmart.data.repository.GetStatusTask;
+import com.example.robosmart.data.repository.Obstaculo;
+import com.example.robosmart.data.repository.Robo;
 import com.example.robosmart.databinding.FragmentCapturaImagemBinding;
+import com.example.robosmart.services.Navegacao;
 import com.example.robosmart.ui.viewmodel.ImagemViewModel;
 import com.example.robosmart.utils.TipoFragment;
 import com.google.android.material.textfield.TextInputEditText;
@@ -183,19 +186,27 @@ public class CapturaImagemFragment extends Fragment {
         roboX = (xBitmapRobo / bitmapLargura) * larguraRealfloat;
         roboY = (yBitmapRobo / bitmapAltura) * alturaRealfloat;
         roboTheta = thetaZ;
+        List<Obstaculo> obstaculo = new ArrayList<>();
+        Obstaculo obstaculo1;
 
         Float[] xObstaculo1 = new Float[xObstaculo.size()];
         Float[] yObstaculo1 = new Float[yObstaculo.size()];
         for (int i = 0; i < xObstaculo.size(); i++) {
-            xObstaculo1[i] = (xObstaculo.get(i) / bitmapLargura) * larguraRealfloat;
-            yObstaculo1[i] = (yObstaculo.get(i) / bitmapAltura) * alturaRealfloat;
+            float xReal  = (xObstaculo.get(i) / bitmapLargura) * larguraRealfloat;
+            float yReal   = (yObstaculo.get(i) / bitmapAltura) * alturaRealfloat;
+            obstaculo1 = new Obstaculo(xReal,yReal);
+            obstaculo.add(obstaculo1);
+
         }
         Log.i("Touch", "ANTES DA CHAMADA DA COMUNICAÇÃO");
 
         Log.i("Touch", "roboX: " + roboX + " roboY: " + roboY + " roboTheta: " + roboTheta + " goalX: " + goalX + " goalY: " + goalY);
-
+        Robo robo  = new Robo(roboX, roboY, roboTheta);
+        new Navegacao().navegarParaObjetivo(robo, goalX, goalY, obstaculo );
         //ComunicacaoEsp comunicacaoEsp = new ComunicacaoEsp(roboX, roboY, roboTheta, goalX, goalY, xObstaculo1, yObstaculo1);
         //comunicacaoEsp.execute();
+
+
         // Iniciar a verificação de status
         checkStatusRepeatedly(); // Chama o método que inicia a verificação
 

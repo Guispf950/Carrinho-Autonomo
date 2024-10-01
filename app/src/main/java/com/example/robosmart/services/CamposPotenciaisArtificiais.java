@@ -2,6 +2,7 @@ package com.example.robosmart.services;
 
 import android.util.Log;
 
+import com.example.robosmart.data.repository.Objetivo;
 import com.example.robosmart.data.repository.Obstaculo;
 import com.example.robosmart.data.repository.Robo;
 
@@ -15,8 +16,8 @@ public class CamposPotenciaisArtificiais {
     private static float k_att_quadratico = 5.0f;
     private static float k_att_conico = 0.1f;
 
-    public static float[] atualizarForcas(Robo robo, float goalX, float goalY, List<Obstaculo> obstaculos ) {
-        float distToGoal = (float) Math.sqrt(Math.pow(goalX - robo.getX(), 2) + Math.pow(goalY - robo.getY(), 2));
+    public static float[] atualizarForcas(Robo robo, Objetivo objetivo, List<Obstaculo> obstaculos ) {
+        float distToGoal = (float) Math.sqrt(Math.pow(objetivo.getX() - robo.getX(), 2) + Math.pow(objetivo.getY() - robo.getY(), 2));
 
 
         float forceAttConicoX = 0;
@@ -26,12 +27,12 @@ public class CamposPotenciaisArtificiais {
         float forceAttQuadraticoY = 0;
 
         if (distToGoal < dq) {
-            forceAttQuadraticoX = k_att_quadratico * (goalX - robo.getX()) * distToGoal;
-            forceAttQuadraticoY = k_att_quadratico * (goalY - robo.getY()) * distToGoal;
+            forceAttQuadraticoX = k_att_quadratico * (objetivo.getX() - robo.getX()) * distToGoal;
+            forceAttQuadraticoY = k_att_quadratico * (objetivo.getY() - robo.getY()) * distToGoal;
 
         } else {
-            forceAttConicoX = k_att_conico * (goalX - robo.getX());
-            forceAttConicoY = k_att_conico * (goalY - robo.getY());
+            forceAttConicoX = k_att_conico * (objetivo.getX() - robo.getX());
+            forceAttConicoY = k_att_conico * (objetivo.getY() - robo.getY());
             Log.d("AtualizarForcas", "forceAttConicoX: " + forceAttConicoX);
             Log.d("AtualizarForcas", "forceAttConicoY: " + forceAttConicoY);
         }

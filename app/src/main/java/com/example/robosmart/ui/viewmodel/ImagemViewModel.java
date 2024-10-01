@@ -27,6 +27,7 @@ public class ImagemViewModel extends ViewModel {
         ComunicacaoEspCam comunicacaoEspCam = new ComunicacaoEspCam(new ComunicacaoEspCam.OnBitmapDownloadedListener() {
             @Override
             public void onBitmapDownloaded(Bitmap bitmap) {
+
                 imageBitmap.postValue(bitmap);
             }
         });

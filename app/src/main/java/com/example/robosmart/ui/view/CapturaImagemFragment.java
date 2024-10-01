@@ -28,9 +28,11 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.robosmart.R;
 import com.example.robosmart.data.repository.ComunicacaoEsp;
 import com.example.robosmart.data.repository.GetStatusTask;
+import com.example.robosmart.data.repository.Objetivo;
 import com.example.robosmart.data.repository.Obstaculo;
 import com.example.robosmart.data.repository.Robo;
 import com.example.robosmart.databinding.FragmentCapturaImagemBinding;
+import com.example.robosmart.services.CalcularCoordenadasReais;
 import com.example.robosmart.services.Navegacao;
 import com.example.robosmart.ui.viewmodel.ImagemViewModel;
 import com.example.robosmart.utils.TipoFragment;
@@ -108,6 +110,7 @@ public class CapturaImagemFragment extends Fragment {
                             calculateRealCoordinates(xBitmapRobo, yBitmapRobo, thetaZ, x, y, xObstaculoList, yObstaculoList);
                         }
 
+
                     }
                 }else{
                     binding.imageViewImagem.setImageResource(R.drawable.nenhuma_imagem_capturada);
@@ -124,8 +127,14 @@ public class CapturaImagemFragment extends Fragment {
                     y = event.getY();
                     Log.i("ROBO", "Robo X:" + xBitmapRobo + "Robo Y: " + yBitmapRobo);
                     Log.i("OBSTACULO", "Obstaculo X: " + xObstaculo[0] + "Obstaculo Y: " + yObstaculo[0]);
-                    calculateRealCoordinates(xBitmapRobo, yBitmapRobo, thetaZ, x, y, xObstaculoList, yObstaculoList);
 
+                    //calculateRealCoordinates(xBitmapRobo, yBitmapRobo, thetaZ, x, y, xObstaculoList, yObstaculoList);
+                    Robo robo = new Robo(xBitmapRobo, yBitmapRobo, (float)thetaZ);
+                    Objetivo objetivo = new Objetivo(x,y);
+                    List<Obstaculo> obstaculos = new ArrayList<>();
+
+                    //chama metodo que navega para o objetivo
+                    new Navegacao(imageViewModel).navegarParaObjetivo(objetivo);
 
 
                     view.performClick(); // Importante para acessibilidade
@@ -202,6 +211,7 @@ public class CapturaImagemFragment extends Fragment {
 
         Log.i("Touch", "roboX: " + roboX + " roboY: " + roboY + " roboTheta: " + roboTheta + " goalX: " + goalX + " goalY: " + goalY);
         Robo robo  = new Robo(roboX, roboY, roboTheta);
+
         new Navegacao().navegarParaObjetivo(robo, goalX, goalY, obstaculo );
         //ComunicacaoEsp comunicacaoEsp = new ComunicacaoEsp(roboX, roboY, roboTheta, goalX, goalY, xObstaculo1, yObstaculo1);
         //comunicacaoEsp.execute();
@@ -313,6 +323,10 @@ public class CapturaImagemFragment extends Fragment {
 
                 xObstaculo = new float[(int) ids.total()];
                 yObstaculo = new float[(int) ids.total()];
+                List<Obstaculo> obstaculos = new ArrayList<>();
+                Obstaculo obstaculo = new Obstaculo(xObstaculo[i], yObstaculo[i]);
+                obstaculos.add(obstaculo);
+
 
                 if(markerId == pegarIdRobo()){
                     // Acessar as coordenadas 2D projetadas no MatOfPoint2f

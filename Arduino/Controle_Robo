@@ -74,12 +74,7 @@
     
     attachInterrupt(digitalPinToInterrupt(interruptPin1), handleInterruptA, RISING); 
     attachInterrupt(digitalPinToInterrupt(interruptPin2), handleInterruptB, RISING);  
-    
-    /*for (int i = 0; i < 3; i++) {
-      pinMode(pinoTrig[i], OUTPUT);
-      pinMode(pinoEcho[i], INPUT);
-    } */
-
+ 
     Serial.begin(115200); // Configfura a taxa de transmissão para 115200 bps
     Serial1.begin(9600);
   
